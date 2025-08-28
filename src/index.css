@@ -1,6 +1,9 @@
 @tailwind base;
-  @tailwind components;
-  @tailwind utilities;
+@tailwind components;
+@tailwind utilities;
+
+/* Import responsive styles */
+@import './styles/responsive.css';
 
   @layer base {
     :root {
