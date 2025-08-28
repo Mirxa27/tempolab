@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Phone, Mail, MapPin, MessageCircle } from "lucide-react";
+import { MapContainer as RLMapContainer, TileLayer as RLTileLayer, Marker as RLMarker, Popup as RLPopup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 
 const ContactPage = () => {
   const contactInfo = [
@@ -92,11 +94,20 @@ const ContactPage = () => {
             <div className="h-full">
               <Card className="h-full">
                 <CardContent className="p-6 h-full">
-                  <div className="aspect-square w-full bg-gray-100 rounded-lg mb-6">
-                    {/* Add map component here */}
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                      Map placeholder
-                    </div>
+                  <div className="aspect-square w-full rounded-lg mb-6 overflow-hidden">
+                    // @ts-expect-error react-leaflet typings
+                    <RLMapContainer center={[24.7136, 46.6753]} zoom={12} style={{ height: "100%", width: "100%", minHeight: 300 }}>
+                      <RLTileLayer
+                        // @ts-ignore react-leaflet typing mismatch workaround
+                        attribution='&copy; OpenStreetMap contributors'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      />
+                      <RLMarker position={[24.7136, 46.6753]}>
+                        <RLPopup>
+                          HabibStay Office<br />Riyadh, Saudi Arabia
+                        </RLPopup>
+                      </RLMarker>
+                    </RLMapContainer>
                   </div>
                   <h3 className="font-semibold mb-2">Office Location</h3>
                   <p className="text-gray-600">

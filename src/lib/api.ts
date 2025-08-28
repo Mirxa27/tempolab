@@ -1,5 +1,4 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://api.habibstay.com";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export interface ChatMessage {
   id: string;
@@ -17,11 +16,37 @@ export interface ChatResponse {
   }[];
 }
 
+// DTO validation schemas using Zod
+import { z } from "zod";
+
+export const ChatMessageSchema = z.object({
+  id: z.string(),
+  text: z.string().min(1),
+  sender: z.enum(["user", "sara"]),
+  timestamp: z.union([z.date(), z.string().transform((s) => new Date(s))]),
+});
+
+export const ChatResponseSchema = z.object({
+  message: ChatMessageSchema,
+  suggestedProperties: z.array(z.string()).optional(),
+  actions: z
+    .array(
+      z.object({
+        type: z.enum(["search", "book", "invest"]),
+        data: z.unknown(),
+      }),
+    )
+    .optional(),
+});
+
 export const chatWithSara = async (
   message: string,
   conversationHistory: ChatMessage[],
 ): Promise<ChatResponse> => {
   try {
+    if (!API_BASE_URL) {
+      throw new Error("VITE_API_BASE_URL is not configured");
+    }
     const response = await fetch(`${API_BASE_URL}/ai/chat`, {
       method: "POST",
       headers: {
@@ -34,20 +59,15 @@ export const chatWithSara = async (
     });
 
     if (!response.ok) {
-      throw new Error("Failed to get AI response");
+      const text = await response.text();
+      throw new Error(`AI chat error: ${response.status} ${text}`);
     }
 
-    return await response.json();
+    const json = await response.json();
+    const parsed = ChatResponseSchema.parse(json) as unknown as ChatResponse;
+    return parsed;
   } catch (error) {
     console.error("Error chatting with Sara:", error);
-    // Fallback response if API fails
-    return {
-      message: {
-        id: Date.now().toString(),
-        text: "I apologize, but I'm having trouble connecting to my services right now. Please try again in a moment.",
-        sender: "sara",
-        timestamp: new Date(),
-      },
-    };
+    throw error;
   }
 };

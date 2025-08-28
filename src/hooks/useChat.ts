@@ -25,8 +25,9 @@ export const useChat = (initialMessages: ChatMessage[] = []) => {
         const response = await chatWithSara(text, messages);
         setMessages((prev) => [...prev, response.message]);
         return response;
-      } catch (err) {
-        setError("Failed to send message");
+      } catch (err: any) {
+        const msg = err?.message || "Failed to send message";
+        setError(msg);
         console.error("Chat error:", err);
       } finally {
         setIsLoading(false);
