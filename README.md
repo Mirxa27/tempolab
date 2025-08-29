@@ -1,30 +1,43 @@
-# React + TypeScript + Vite
+# HabibStay
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Production-ready React + TypeScript + Vite app with Supabase backend, admin panel, and mobile-first UI.
 
-Currently, two official plugins are available:
+## Getting Started
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+1. Copy `.env.example` to `.env` and set values:
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
-
-```js
-export default {
-  // other rules...
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-  },
-}
+```
+VITE_API_BASE_URL= https://your-api.example.com
+VITE_SUPABASE_URL= https://YOUR_PROJECT_ID.supabase.co
+VITE_SUPABASE_ANON_KEY= your_anon_key
 ```
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+2. Install dependencies:
+
+```
+npm install
+```
+
+3. Run database migrations and seed using Supabase SQL editor or CLI:
+
+- Run the SQL in `supabase/migrations/0001_init.sql`
+- Run the SQL in `supabase/migrations/0002_admin_policies.sql`
+- Run the SQL in `supabase/seed/0001_seed.sql`
+
+4. Start the dev server:
+
+```
+npm run dev
+```
+
+## Admin Bootstrap
+
+- Sign in with email OTP from the globe menu
+- Click “Grant Self Admin” once to become the initial super admin
+- Use the Admin panel (`/admin`) to manage properties, configuration, and roles
+
+## Deployment (Vercel)
+
+- Set env vars in Vercel Project Settings: `VITE_API_BASE_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+- Use the default Vite build command `npm run build` and output `dist`
+

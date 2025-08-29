@@ -32,7 +32,7 @@ const SaraChat = ({
   const [isMinimized, setIsMinimized] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  const { messages, sendMessage, isLoading } = useChat(initialMessages);
+  const { messages, sendMessage, isLoading, error } = useChat(initialMessages);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -120,6 +120,9 @@ const SaraChat = ({
                       </div>
                     </div>
                   ))}
+                  {error && (
+                    <div className="text-red-600 text-sm">{error}</div>
+                  )}
                 </div>
               </ScrollArea>
 

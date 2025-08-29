@@ -23,6 +23,10 @@ import {
   SheetTrigger,
 } from "./ui/sheet";
 import { Separator } from "./ui/separator";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { useNavigate } from "react-router-dom";
+import { grantSelfAdmin, signInWithOtp, signOut } from "@/lib/api.auth";
 
 interface HeaderProps {
   onLanguageChange?: (lang: "en" | "ar") => void;
@@ -37,6 +41,18 @@ const Header = ({
   onListProperty = () => console.log("List Property clicked"),
   onInvestNow = () => console.log("Invest Now clicked"),
 }: HeaderProps) => {
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const sub = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserEmail(session?.user?.email ?? null);
+    });
+    supabase.auth.getSession().then(({ data }) => setUserEmail(data.session?.user?.email ?? null));
+    return () => {
+      sub.data.subscription.unsubscribe();
+    };
+  }, []);
   return (
     <header className="w-full h-20 bg-white border-b border-gray-200 px-4 lg:px-8 fixed top-0 z-50">
       <div className="max-w-7xl mx-auto h-full flex items-center justify-between">
@@ -108,6 +124,16 @@ const Header = ({
               <DropdownMenuItem onClick={() => onLanguageChange("ar")}>
                 العربية
               </DropdownMenuItem>
+              <Separator />
+              {userEmail ? (
+                <>
+                  <DropdownMenuItem onClick={() => navigate("/admin")}>Admin</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => grantSelfAdmin()}>Grant Self Admin</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => signOut()}>Sign out</DropdownMenuItem>
+                </>
+              ) : (
+                <DropdownMenuItem onClick={() => signInWithOtp(prompt("Enter email for login") || "")}>Sign in</DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

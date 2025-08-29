@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import PropertyCard from "./PropertyCard";
 import FilterBar, { FilterOptions } from "./FilterBar";
 import { Property } from "@/types";
+import { fetchPropertyCards } from "@/lib/api.properties";
 
 interface PropertyGridProps {
   filters?: FilterOptions;
@@ -24,72 +25,7 @@ const defaultFilters: FilterOptions = {
 const PropertyGrid = ({
   filters: externalFilters,
   onFilterChange: externalFilterChange,
-  properties = [
-    {
-      id: "1",
-      imageUrl:
-        "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop&q=60",
-      title: "Luxury Villa with Pool",
-      price: 1500,
-      location: "Riyadh, Saudi Arabia",
-      bedrooms: 3,
-      bathrooms: 2,
-      rentalDurations: ["daily", "weekly", "monthly"],
-      priceByDuration: { daily: 1500, weekly: 9000, monthly: 32000 },
-      amenities: ["Pool", "WiFi", "Air Conditioning", "Kitchen", "Parking"],
-      host: { id: "1", name: "Ahmed", rating: 4.8 },
-      investmentDetails: {
-        available: true,
-        expectedReturn: 17,
-        minInvestment: 50000,
-      },
-    },
-    {
-      id: "2",
-      imageUrl:
-        "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&auto=format&fit=crop&q=60",
-      title: "Modern Downtown Apartment",
-      price: 900,
-      location: "Jeddah, Saudi Arabia",
-      bedrooms: 2,
-      bathrooms: 1,
-      rentalDurations: ["daily", "weekly", "monthly"],
-      priceByDuration: { daily: 900, weekly: 5400, monthly: 19000 },
-      amenities: ["WiFi", "Air Conditioning", "Kitchen", "Gym Access"],
-      host: { id: "2", name: "Fatima", rating: 4.9 },
-      investmentDetails: {
-        available: true,
-        expectedReturn: 15,
-        minInvestment: 35000,
-      },
-    },
-    {
-      id: "3",
-      imageUrl:
-        "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&auto=format&fit=crop&q=60",
-      title: "Beachfront Resort Villa",
-      price: 2500,
-      location: "Dammam, Saudi Arabia",
-      bedrooms: 4,
-      bathrooms: 3,
-      rentalDurations: ["daily", "weekly", "monthly"],
-      priceByDuration: { daily: 2500, weekly: 15000, monthly: 52000 },
-      amenities: [
-        "Beach Access",
-        "Pool",
-        "WiFi",
-        "Air Conditioning",
-        "Kitchen",
-        "Parking",
-      ],
-      host: { id: "3", name: "Omar", rating: 4.7 },
-      investmentDetails: {
-        available: true,
-        expectedReturn: 19,
-        minInvestment: 75000,
-      },
-    },
-  ],
+  properties,
   onQuickView = (id: string) =>
     console.log("Quick view clicked for property", id),
   onBook = (id: string) => console.log("Book clicked for property", id),
@@ -98,9 +34,63 @@ const PropertyGrid = ({
   const [localFilters, setLocalFilters] =
     useState<FilterOptions>(defaultFilters);
   const filters = externalFilters || localFilters;
+  const [fetched, setFetched] = useState<Property[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    async function run() {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await fetchPropertyCards({
+          searchTerm: filters.searchTerm,
+          minPrice: filters.priceRange[0],
+          maxPrice: filters.priceRange[1],
+          bedrooms: filters.bedrooms ?? undefined,
+          duration: filters.duration,
+          investmentOnly: filters.investmentOnly,
+          sortBy: filters.sortBy,
+        });
+        if (!mounted) return;
+        // Map to Property type expected by UI
+        const props: Property[] = data.map((p) => ({
+          id: p.id,
+          imageUrl: p.imageUrl,
+          title: p.title,
+          price: Number(p.priceByDuration?.[filters.duration] ?? 0),
+          location: p.location,
+          bedrooms: p.bedrooms,
+          bathrooms: p.bathrooms,
+          rentalDurations: ["daily", "weekly", "monthly"],
+          priceByDuration: p.priceByDuration,
+          amenities: p.amenities ?? [],
+          host: p.host,
+          investmentDetails:
+            p.investmentDetails && p.investmentDetails.available
+              ? {
+                  available: true,
+                  expectedReturn: p.investmentDetails.expectedReturn ?? 0,
+                  minInvestment: p.investmentDetails.minInvestment ?? 0,
+                }
+              : undefined,
+        }));
+        setFetched(props);
+      } catch (e: any) {
+        setError(e?.message ?? "Failed to load properties");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+    run();
+    return () => {
+      mounted = false;
+    };
+  }, [filters.searchTerm, filters.priceRange[0], filters.priceRange[1], filters.bedrooms, filters.duration, filters.investmentOnly, filters.sortBy]);
 
   const filteredProperties = useMemo(() => {
-    return properties
+    const source = (properties ?? fetched ?? [])
       .filter((property) => {
         // Search term filter
         if (filters.searchTerm) {
@@ -156,7 +146,8 @@ const PropertyGrid = ({
             return 0;
         }
       });
-  }, [properties, filters]);
+    return source;
+  }, [properties, fetched, filters]);
 
   const handleFilterChange = (newFilters: Partial<FilterOptions>) => {
     if (externalFilterChange) {
@@ -172,9 +163,17 @@ const PropertyGrid = ({
         filters={filters}
         onFilterChange={handleFilterChange}
         maxPrice={Math.max(
-          ...properties.map((p) => p.priceByDuration[filters.duration] || 0),
+          ...((properties ?? fetched ?? [])
+            .map((p) => p.priceByDuration[filters.duration] || 0)
+            .concat([10000])),
         )}
       />
+      {error && (
+        <div className="text-red-600 mb-4">{error}</div>
+      )}
+      {loading && (
+        <div className="text-gray-500 mb-4">Loading properties…</div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 justify-items-center">
         {filteredProperties.map((property) => (
           <PropertyCard

@@ -11,6 +11,10 @@ import FAQPage from "./pages/faq";
 import BlogPage from "./pages/blog";
 import SuccessStoriesPage from "./pages/success-stories";
 import routes from "tempo-routes";
+import AdminHome from "./pages/admin/index";
+import AdminProperties from "./pages/admin/properties";
+import AdminConfig from "./pages/admin/config";
+import AdminUsers from "./pages/admin/users";
 
 function App() {
   return (
@@ -30,6 +34,10 @@ function App() {
           <Route path="/faq" element={<FAQPage />} />
           <Route path="/blog" element={<BlogPage />} />
           <Route path="/success-stories" element={<SuccessStoriesPage />} />
+          <Route path="/admin" element={<AdminHome />} />
+          <Route path="/admin/properties" element={<AdminProperties />} />
+          <Route path="/admin/config" element={<AdminConfig />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
         </Routes>
         {import.meta.env.VITE_TEMPO === "true" && useRoutes(routes)}
       </>
